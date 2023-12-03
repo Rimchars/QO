@@ -69,7 +69,7 @@ class Contact : Fragment() {
     var receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val intent = intent
-            statu = intent.getStringExtra("statu")!!
+            statu = intent.getStringExtra("status") ?: "true"
             if (statu == "true") {
                 refreshcontact()
                 statu = "false"
@@ -83,6 +83,7 @@ class Contact : Fragment() {
         val view = inflater.inflate(R.layout.fragment_contact, container, false)
         val nf=view.findViewById<TextView>(R.id.newFriend)
         nf.setOnClickListener {
+            sendmessage(requireContext()).sendmessage("getcontacts:"+MainActivity.id)
             val intent = Intent(activity,NewFriend::class.java)
             startActivity(intent)
         }

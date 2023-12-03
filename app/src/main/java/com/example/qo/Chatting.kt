@@ -4,26 +4,19 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.Cursor
 import android.os.Bundle
-import android.os.DropBoxManager
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.math.log
+import java.util.Date
 
 class Chatting : AppCompatActivity() {
     private lateinit var adapter: MessageAdapter
@@ -36,6 +29,9 @@ class Chatting : AppCompatActivity() {
         setContentView(R.layout.activity_chatting)
         id1 = MainActivity.id
         id2 = intent.getStringExtra("id")!!
+        val name = intent.getStringExtra("name")
+        val title = findViewById<TextView>(R.id.title)
+        title.text = name
         adapter = MessageAdapter(messages)
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this) // Add this line
@@ -50,8 +46,10 @@ class Chatting : AppCompatActivity() {
                 //判断是不是当前聊天的人
                 if((message.id1==id1&&message.id2==id2)||(message.id1==id2&&message.id2==id1))
                     messages.add(message)
-                adapter.notifyDataSetChanged()
             }
+            adapter.notifyDataSetChanged()
+            // Scroll to the last message
+            recyclerView.scrollToPosition(messages.size - 1)
         }
         cursor.close()
         db.close()
@@ -65,10 +63,11 @@ class Chatting : AppCompatActivity() {
                 val message = intent.getStringExtra("message")
                 val id2 = intent.getStringExtra("id2")
                 val time = intent.getStringExtra("time")
-                //打印出来
-                println("mid:$mid id1:$id1 message:$message id2:$id2 time:$time")
                 messages.add(Messages(mid!!,id1!!,message!!,id2!!,time!!))
                 adapter.notifyDataSetChanged()
+                // Scroll to the last message
+                val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+                recyclerView.scrollToPosition(messages.size - 1)
             }
         }
     }
@@ -76,6 +75,9 @@ class Chatting : AppCompatActivity() {
         val messageText = findViewById<EditText>(R.id.editText).text
         val datetime = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(java.util.Date())
         val db=DatabaseHelper(this)
+        if (messageText.isEmpty()) {
+            return
+        }
         val message = Messages("send",id1,messageText.toString(),id2,datetime)
         messages.add(message)
         adapter.notifyDataSetChanged()
@@ -83,8 +85,31 @@ class Chatting : AppCompatActivity() {
         db.insertmessageData("send",id1,messageText.toString(),id2,datetime)
         // Send message through socket
         sendmessage(this).sendmessage("send:$id1 $messageText $id2")
+        // Scroll to the last message
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        recyclerView.scrollToPosition(messages.size - 1)
+        // Clear the input
+        findViewById<EditText>(R.id.editText).text.clear()
+        db.close()
     }
-    class MessageAdapter(private val messages: List<Messages>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
+
+    class MessageAdapter(private val messages: MutableList<Messages>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
+        fun date(date:String):String{
+            //如果是今天则取时分,如果是昨天则取昨天,如果是昨天之前则取月日
+            val today=java.text.SimpleDateFormat("yyyy-MM-dd").format(Date())
+            val yesterday=java.text.SimpleDateFormat("yyyy-MM-dd").format(Date(System.currentTimeMillis()-24*60*60*1000))
+            val date1=date.substring(0,10)
+            val date2=date.substring(11,16)
+            if(date1==today){
+                return date2
+            }
+            else if(date1==yesterday){
+                return "昨天"
+            }
+            else{
+                return date1.substring(5,10)
+            }
+        }
 
         class MessageViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
@@ -97,15 +122,16 @@ class Chatting : AppCompatActivity() {
             val message = messages[position]
             val messageTextView = holder.view.findViewById<TextView>(R.id.messageTextView)
             messageTextView.text = message.messages
-            //如果是自己发的消息，就靠右显示
+            val itemlinearLayout = holder.view.findViewById<LinearLayout>(R.id.msg)
+            val time=holder.view.findViewById<TextView>(R.id.timeTextView)
+            time.setText(message.time?.let { date(it) })
             if (message.mid == "send") {
-                messageTextView.gravity = Gravity.END
+                itemlinearLayout.gravity = Gravity.END
             } else {
-                messageTextView.gravity = Gravity.START
+                itemlinearLayout.gravity = Gravity.START
             }
+
         }
-
-
         override fun getItemCount() = messages.size
     }
 

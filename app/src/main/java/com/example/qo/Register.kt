@@ -2,6 +2,7 @@ package com.example.qo
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.wifi.WifiManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -55,6 +56,7 @@ class Register : AppCompatActivity() {
                 if ("true" in str) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(application, "注册成功", Toast.LENGTH_SHORT).show()
+                        finish()
                     }
                 } else {
                     withContext(Dispatchers.Main) {

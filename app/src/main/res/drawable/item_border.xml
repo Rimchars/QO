@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#FFFFFF" /> <!-- item 的背景色 -->
-    <corners android:radius="2dp" /> <!-- 边框的圆角半径 -->
-    <stroke android:color="#000000" android:width="2dp"/> <!-- 边框的颜色和宽度 -->
+    <solid android:color="#B0E0E6" /> <!-- item 的背景色 -->
+    <corners android:radius="4dp" /> <!-- 边框的圆角半径 -->
+    <stroke android:color="#789262" android:width="2dp"/> <!-- 边框的颜色和宽度 -->
 </shape>

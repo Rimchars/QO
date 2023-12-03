@@ -66,6 +66,7 @@ class NewFriend : AppCompatActivity() {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView) ?: return
         val db=DatabaseHelper(this)
         val contact=db.readcontactsData("等待")
+        //去除id1=MianActivity.id的项
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = ContactAdapter(contact)
         recyclerView.adapter?.notifyDataSetChanged()

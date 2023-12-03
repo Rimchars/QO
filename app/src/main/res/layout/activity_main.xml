@@ -6,26 +6,20 @@
         android:id="@+id/login_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/white"
+        android:background="@drawable/item_fragment"
         tools:context=".MainActivity" android:clickable="true">
 
-    <TextView
-            android:text="TextView"
-            android:layout_width="wrap_content"
-            android:layout_centerHorizontal="true"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_height="wrap_content" android:id="@+id/test"/>
+
     <EditText
             android:id="@+id/id"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="100dp"
             android:layout_marginEnd="32dp"
-            android:background="@android:drawable/editbox_background"
+            android:background="@drawable/item_edittext"
             android:ems="10"
-            android:hint="QQ号/手机号/邮箱"
+            android:hint="账号"
             android:inputType="text"
             android:padding="10dp"
             android:textColor="@android:color/black"
@@ -44,7 +38,7 @@
             android:layout_marginStart="32dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="32dp"
-            android:background="@android:drawable/editbox_background"
+            android:background="@drawable/item_edittext"
             android:ems="10"
             android:hint="密码"
             android:inputType="textPassword"
@@ -73,8 +67,10 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/pwd"
-            style="@style/Widget.Material3.MaterialTimePicker.Button" android:textColorHighlight="#2196F3"
-            android:textColorLink="#2196F3" android:textColorHint="#2196F3" app:layout_constraintHorizontal_bias="0.0"
+            style="@style/Widget.Material3.MaterialTimePicker.Button"
+            android:background="@drawable/item_toolbar"
+            app:backgroundTint="@null"
+            app:layout_constraintHorizontal_bias="0.0"
             android:onClick="login"/>
     <TextView
             android:id="@+id/register_textview"

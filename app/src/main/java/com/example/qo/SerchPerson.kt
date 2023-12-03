@@ -1,6 +1,12 @@
 package com.example.qo
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
+import android.os.DropBoxManager
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,10 +19,12 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
 
 class SerchPerson : AppCompatActivity() {
-    data class Contact(val name: String,val id: String)
+    data class Contact(val name: String,val id: String,val ship:String)
     private var contacts = emptyList<Contact>()
     private var lastQuery: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,53 +33,36 @@ class SerchPerson : AppCompatActivity() {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         val searchView = findViewById<SearchView>(R.id.searchView)
-            searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean {
-                    if (query != lastQuery) {
-                        lastQuery = query
-                        // socket发送数据
-                        val job = GlobalScope.launch(Dispatchers.IO) {
-                            val app = application as socket
-                            val socket = app.getSocketInstance()
-                            val outputStream = socket?.getOutputStream()
-                            outputStream!!.write("serch:".toByteArray()+query!!.toByteArray())
-                            //接收数据
-                            val inputStream = socket?.getInputStream()
-                            val buffer = ByteArray(1024)
-                            val len = inputStream?.read(buffer)
-                            if (len == -1) {
-                                return@launch
-                            }
-                            val str = String(buffer, 0, len!!)
-                            //解析json数据
-                            val jsonArray = JSONArray(str)
-                            val newContacts = mutableListOf<Contact>()
-                            for (i in 0 until jsonArray.length()) {
-                                val jsonObject = jsonArray.getJSONObject(i)
-                                val type = jsonObject.getString("type")
-                                val id = jsonObject.getInt("id")
-                                val name = jsonObject.getString("name")
-                                println("type: $type, id: $id, name: $name")
-                                newContacts.add(Contact(name, id.toString()))
-                            }
-                            outputStream.flush() // 将 flush() 方法移动到这里
-                            contacts = newContacts
-                            runOnUiThread {
-                                recyclerView.adapter = ContactAdapter(contacts)
-                            }
-                        }
-                    }
-                    return false
-                }
-            override fun onQueryTextChange(newText: String?): Boolean {
-                // Update the search results when the search query changes
-                val filteredContacts = contacts.filter { it.name.contains(newText ?: "", ignoreCase = true) }
-                recyclerView.adapter = ContactAdapter(filteredContacts)
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String): Boolean {
+                lastQuery = query
+                val msg= "serch:$query"
+                sendmessage(this@SerchPerson).sendmessage(msg)
+                contacts = emptyList<Contact>() // 清空列表
+                val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+                recyclerView.adapter = ContactAdapter(contacts) // 更新适配器
+                return false
+            }
+            override fun onQueryTextChange(newText: String): Boolean {
                 return false
             }
         })
     }
-
+    var reciver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val name=intent.getStringExtra("name")
+            val id=intent.getStringExtra("id")
+            val ship=DatabaseHelper(this@SerchPerson).getship(id!!)
+            Log.d("serch", "onReceive: $name $id $ship")
+            val contact=Contact(name!!,id!!,ship!!)
+            if (!contacts.any { it.id == contact.id }) {
+                contacts=contacts+contact
+                val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+                recyclerView.adapter = ContactAdapter(contacts)
+                recyclerView.adapter?.notifyDataSetChanged()
+            }
+        }
+    }
 
     class ContactAdapter(private val contacts: List<Contact>) : RecyclerView.Adapter<ContactAdapter.ContactViewHolder>() {
 
@@ -86,19 +77,35 @@ class SerchPerson : AppCompatActivity() {
             val contact = contacts[position]
             val info = holder.view.findViewById<TextView>(R.id.info)
             val button=holder.view.findViewById<Button>(R.id.button)
+            if (contact.ship=="好友"){
+                button.text="已添加"
+                button.isEnabled=false
+            }
             button.setOnClickListener {
                 //socket发送数据
                 val job = GlobalScope.launch(Dispatchers.IO) {
-                    val app = holder.view.context.applicationContext as socket
+                    val app = holder.itemView.context.applicationContext as socket
                     val socket = app.getSocketInstance()
-                    val outputStream = socket?.getOutputStream()
-                    outputStream!!.write(("add:"+MainActivity.id+" "+contact.id).toByteArray())
-                    outputStream.flush()
+                    val writer = socket?.getOutputStream()
+                    val msg = "add:${MainActivity.id} ${contact.id}"
+                    writer?.write(msg.toByteArray())
+                    writer?.flush()
                 }
             }
             info.text = contact.name+"("+contact.id+")"
         }
-
         override fun getItemCount() = contacts.size
+    }
+
+    override fun onResume() {
+        super.onResume()
+        //注册广播
+        val intentFilter = IntentFilter()
+        intentFilter.addAction("com.example.qo.SerchPerson")
+        registerReceiver(reciver, intentFilter)
+    }
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(reciver)
     }
 }

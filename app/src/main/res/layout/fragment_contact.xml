@@ -3,6 +3,8 @@
                 xmlns:tools="http://schemas.android.com/tools"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:padding="10dp"
+                android:background="@drawable/item_fragment"
                 tools:context=".MainActivity">
 
     <LinearLayout
@@ -22,6 +24,8 @@
             <TextView
                     android:background="@drawable/item_border"
                     android:text="新朋友"
+                    android:paddingStart="15dp"
+                    android:gravity="center_vertical"
                     android:layout_margin="10dp"
                     android:layout_width="match_parent"
                     android:layout_height="55dp" android:id="@+id/newFriend"
@@ -29,6 +33,8 @@
             <TextView
                     android:background="@drawable/item_border"
                     android:text="群通知"
+                    android:paddingStart="15dp"
+                    android:gravity="center_vertical"
                     android:layout_margin="10dp"
                     android:layout_width="match_parent"
                     android:layout_height="55dp" android:id="@+id/groupMessage"/>
