@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,11 +44,12 @@ class Contact : Fragment() {
             val contact = contacts[position]
             val info = holder.view.findViewById<TextView>(R.id.info)
             info.text = contact.name+"("+contact.id+")"
-            info.setOnClickListener(){
-                val intent = Intent(holder.itemView.context, Chatting::class.java)
+            //item点击事件
+            holder.view.setOnClickListener {
+                val intent = Intent(holder.view.context,Chatting::class.java)
                 intent.putExtra("id",contact.id)
                 intent.putExtra("name",contact.name)
-                holder.itemView.context.startActivity(intent)
+                holder.view.context.startActivity(intent)
             }
         }
 

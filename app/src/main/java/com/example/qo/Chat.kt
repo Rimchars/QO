@@ -7,9 +7,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Resources
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -25,7 +27,7 @@ class Chat: Fragment() {
     companion object {
         var drawerOpen = false
     }
-    data class Chat(val id: String, var lastMessage: String,val name:String)
+    class Chat(val id: String, val messages: MutableList<String>, val name: String)
     class ChatAdapter(private val chatList: List<Chat>) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
         class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val nameView: TextView = itemView.findViewById(R.id.name)
@@ -39,10 +41,10 @@ class Chat: Fragment() {
         override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
             val chat = chatList[position]
             holder.nameView.text = chat.name+"("+chat.id+")"
-            holder.messageView.text = chat.lastMessage
+            holder.messageView.text = chat.messages.last()
             holder.itemView.setOnClickListener {
                 // 创建一个Intent来启动新的Activity
-               val intent = Intent(holder.itemView.context, Chatting::class.java)
+                val intent = Intent(holder.itemView.context, Chatting::class.java)
                 // 将聊天会话的名称作为额外数据传递给新的Activity
                 intent.putExtra("id", chat.id)
                 intent.putExtra("name",chat.name)
@@ -62,7 +64,12 @@ class Chat: Fragment() {
         val view = inflater.inflate(R.layout.fragment_chat, container, false) // replace "your_layout" with your actual layout resource
         chatList = mutableListOf()
         chatAdapter = ChatAdapter(chatList)
-
+        rcv(view)
+        refreshChatList()
+        receiveNewMessage()
+        return view
+    }
+    fun rcv(view: View){
         recyclerView = view.findViewById(R.id.recyclerView) // find recyclerView in the inflated view
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.overScrollMode = View.OVER_SCROLL_NEVER
@@ -110,6 +117,8 @@ class Chat: Fragment() {
                         animator.start()
                     } else {
                         drawerOpen = true
+                        refreshChatList()
+                        receiveNewMessage()
                         val animator = ObjectAnimator.ofFloat(drawer, "translationY", 0f)
                         animator.interpolator = AccelerateDecelerateInterpolator()
                         animator.duration = 500 // Increase duration to slow down the animation
@@ -146,43 +155,29 @@ class Chat: Fragment() {
             }
         })
         recyclerView.setOnTouchListener(touchListener)
-// Set the initial position of the drawer at the bottom of the screen
         drawer.translationY = -screenHeight.toFloat()
-        refreshChatList()
-        receiveNewMessage()
-
-        return view
     }
     fun refreshChatList() {
         val db = DatabaseHelper(requireContext())
         val cursor = db.getLatestChats(MainActivity.id)
         var name = ""
         var str = ""
-        if (cursor != null && cursor.moveToFirst()) {
-            if (cursor.getString(1) != MainActivity.id) {
-                str = cursor.getString(1)
-                name = db.getname(str)
-                Log.d("1", str)
-            } else {
-                str = cursor.getString(3)
-                name = db.getname(str)
-                Log.d("3", str)
-            }
-        } else {
-            // Handle the case where the cursor is empty
-        }
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 do {
-                    val chat = Chat(str, cursor.getString(2), name)
-                    //如果读取的id是自己的id，就不加入chatlist
-                    if (chat.id == MainActivity.id) {
-                        continue
+                    if (cursor.getString(1) != MainActivity.id) {
+                        str = cursor.getString(1)
+                        name = db.getname(str)
+                    } else {
+                        str = cursor.getString(3)
+                        name = db.getname(str)
                     }
-                    // Check if the id already exists in the chatList
-                    if (!chatList.any { it.id == chat.id }) {
-                        chatList.add(chat)
+                    if (chatList.find { it.id == str }==null) {
+                        chatList.add(Chat(str, mutableListOf(cursor.getString(4)), name))
+                    } else {
+                        chatList.find { it.id == str }?.messages?.add(cursor.getString(4))
                     }
+
                 } while (cursor.moveToNext())
             }
         }
@@ -206,12 +201,12 @@ class Chat: Fragment() {
                     // 找到对应的 Chat 对象
                     val chat = chatList.find { it.id == id }
                     if (chat != null) {
-                        // 更新 lastMessage
-                        chat.lastMessage = message
+                        // 添加新的消息到 messages
+                        chat.messages.add(message)
                     } else {
                         if (id != MainActivity.id) {
                             // 如果找不到对应的 Chat 对象，就创建一个新的 Chat 对象
-                            chatList.add(Chat(id, message, name))
+                            chatList.add(Chat(id, mutableListOf(message), name))
                         }
                     }
                     chatAdapter.notifyDataSetChanged()
@@ -231,7 +226,6 @@ class Chat: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sendmessage(requireContext()).sendmessage("getmessage:"+MainActivity.id)
-        receiveNewMessage()
     }
 
     override fun onResume() {

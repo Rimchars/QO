@@ -20,7 +20,7 @@ class socket : Application() {
         super.onCreate()
 
         GlobalScope.launch(Dispatchers.IO) {
-            socket = Socket("47.120.50.73", 8080)
+            socket = Socket("", 8080)
             ip = getip()
         }
     }

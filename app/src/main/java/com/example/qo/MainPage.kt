@@ -50,7 +50,6 @@ class MainPage: AppCompatActivity() {
         val intent1 = Intent(this, DataService::class.java)
         startService(intent1)
         sendmessage(this@MainPage).sendmessage("getcontacts:" + MainActivity.id)
-        sendmessage(this@MainPage).sendmessage("getmessage:" + MainActivity.id)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -158,7 +157,6 @@ class MainPage: AppCompatActivity() {
 
             override fun onPageSelected(position: Int) {
                 when (position) {
-                    0 -> sendmessage(this@MainPage).sendmessage("getmessage:" + MainActivity.id)
                     1 -> sendmessage(this@MainPage).sendmessage("getcontacts:" + MainActivity.id)
                 }
             }

@@ -171,7 +171,7 @@ class DatabaseHelper(context: Context) :
 
         // Check if the table is empty
         val countQuery = "SELECT count(*) FROM $messages_table"
-        val cursor = db.rawQuery(countQuery, null)
+        var cursor = db.rawQuery(countQuery, null)
         cursor.moveToFirst()
         val count = cursor.getInt(0)
         cursor.close()
@@ -186,6 +186,10 @@ class DatabaseHelper(context: Context) :
                 GROUP BY id1
             ) ORDER BY time DESC
         """
+            cursor= db.rawQuery(query, arrayOf(currentUserId, currentUserId))
+            while(cursor.moveToNext()){
+                Log.i("data",cursor.getString(0)+" "+cursor.getString(1)+" "+cursor.getString(2)+" "+cursor.getString(3)+" "+cursor.getString(4))
+            }
             return db.rawQuery(query, arrayOf(currentUserId, currentUserId))
         } else {
             return null

@@ -1,7 +1,9 @@
 package com.example.qo
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.IBinder
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -10,10 +12,11 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import android.provider.Settings
+
 
 class DataService : Service() {
     private lateinit var databaseHelper: DatabaseHelper
-
     override fun onCreate() {
         super.onCreate()
         databaseHelper = DatabaseHelper(this)

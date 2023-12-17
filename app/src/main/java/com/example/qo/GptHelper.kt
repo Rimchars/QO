@@ -36,29 +36,27 @@ class GptHelper :Fragment(){
         var content=""
     }
     private val msgs = mutableListOf<data>()
-
+    lateinit var recyclerView: RecyclerView
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_gpt_helper, container, false)
         val db=DatabaseHelper(requireContext())
         val dataList =  db.readGptHelperData()
-        Log.i("data", dataList.toString())
-        val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerView) // Assuming you have a RecyclerView with id recyclerView
+        recyclerView = view.findViewById<RecyclerView>(R.id.recyclerView)
         val filter = IntentFilter("com.example.qo.MESSAGE")
         requireActivity().registerReceiver(receiver, filter)
 
         dataList.forEach { jsonObject ->
             val message = data()
-            Log.i("data", jsonObject.toString())
             message.role = jsonObject.get("role").asString
             message.content = jsonObject.get("content").asString
             msgs.add(message)
         }
-
+        msgs.reverse()
         adapter = GptAdapter(msgs)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
+        recyclerView.scrollToPosition(msgs.size - 1)
         adapter.notifyDataSetChanged()
-
         return view
     }
     val receiver = object : BroadcastReceiver() {
@@ -73,18 +71,24 @@ class GptHelper :Fragment(){
             db.insertGptHelperData("assistant",message!!)
             db.close()
             flag=true
+            recyclerView.scrollToPosition(msgs.size - 1)
             adapter.notifyDataSetChanged()
         }
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val send = view.findViewById<Button>(R.id.sendButton)
-        if (flag==false) {}
+        if (flag==false)
+        {
+        }
         else{
         send.setOnClickListener {
             val message =view.findViewById<TextView>(R.id.editText)
             val messageText = message.text.toString()
             val helper=helper()
+            if (messageText.isEmpty()) {
+                return@setOnClickListener
+            }
             helper.sendmessage(requireContext(),messageText)
             data().apply {
                 role="user"
@@ -94,6 +98,7 @@ class GptHelper :Fragment(){
             db.insertGptHelperData("user",messageText)
             Log.i("data", "inserted")
             flag=false
+            recyclerView.scrollToPosition(msgs.size - 1)
             adapter.notifyDataSetChanged()
         }
         }
@@ -119,9 +124,7 @@ class GptHelper :Fragment(){
                 itemlinearLayout.gravity = Gravity.START
             }
         }
-
         override fun getItemCount() = messages.size
-
     }
 
 }
